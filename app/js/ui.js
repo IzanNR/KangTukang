@@ -95,40 +95,101 @@ export function screen({ title, back, content, bottom, headerExtra, nav, cls = "
   }
   root.append(h("main", { class: "screen-body" }, content));
   if (bottom) root.append(h("div", { class: "bottom-bar" }, bottom));
-  if (nav) root.append(bottomNav(nav));
+  if (nav) {
+    setTimeout(() => updateGlobalNav(nav), 0);
+  } else {
+    setTimeout(() => updateGlobalNav(null), 0);
+  }
   return root;
 }
 
-/* Bottom navigation (tab utama) */
-export function bottomNav(active) {
+/* Bottom navigation (tab utama) persistent */
+export function updateGlobalNav(active) {
+  const root = document.getElementById("bottom-nav-root");
+  if (!active) {
+    root.style.display = "none";
+    return;
+  }
+  root.style.display = "grid";
+  
   const tabs = [
     { id: "home", label: "Beranda", icon: "home", hash: "#/home" },
     { id: "activity", label: "Aktivitas", icon: "clock", hash: "#/activity" },
     { id: "promo", label: "Promo", icon: "tag", hash: "#/promo" },
     { id: "messages", label: "Pesan", icon: "chat", hash: "#/messages" },
   ];
-  return h(
-    "nav",
-    { class: "bottom-nav" },
-    tabs.map((t) =>
-      h(
-        "button",
-        {
-          class: "nav-item" + (t.id === active ? " active" : ""),
-          type: "button",
-          onClick: () => (location.hash = t.hash),
-        },
-        icon(t.icon),
-        h("span", {}, t.label)
+
+  const activeIdx = tabs.findIndex(t => t.id === active) || 0;
+
+  // Render once if empty
+  if (root.children.length === 0) {
+    root.append(
+      h("div", { class: "nav-slider" }),
+      ...tabs.map((t) =>
+        h(
+          "button",
+          {
+            class: "nav-item",
+            id: "nav-btn-" + t.id,
+            type: "button",
+            onClick: () => (location.hash = t.hash),
+          },
+          icon(t.icon),
+          h("span", {}, t.label)
+        )
       )
-    )
-  );
+    );
+  }
+
+  // Update active classes
+  tabs.forEach(t => {
+    const btn = document.getElementById("nav-btn-" + t.id);
+    if (btn) btn.className = "nav-item" + (t.id === active ? " active" : "");
+  });
+
+  // Posisikan kotak indikator tepat di tengah tombol aktif (ukur dari DOM)
+  positionNavSlider(root, tabs[activeIdx].id);
+
+  if (!navResizeBound) {
+    navResizeBound = true;
+    window.addEventListener("resize", () => {
+      const r = document.getElementById("bottom-nav-root");
+      const act = r && r.querySelector(".nav-item.active");
+      if (r && act) positionNavSlider(r, act.id.replace("nav-btn-", ""), false);
+    });
+  }
+}
+
+let navResizeBound = false;
+
+function positionNavSlider(root, activeId, animate = true) {
+  const slider = root.querySelector(".nav-slider");
+  const btnEl = document.getElementById("nav-btn-" + activeId);
+  if (!slider || !btnEl) return;
+
+  const W = 62;                          // lebar kotak
+  const H = btnEl.offsetHeight + 6;      // sedikit lebih tinggi dari konten tab
+  const x = btnEl.offsetLeft + (btnEl.offsetWidth - W) / 2;
+  const y = btnEl.offsetTop + (btnEl.offsetHeight - H) / 2;
+
+  const firstShow = !slider.dataset.placed;
+  if (firstShow || !animate) slider.style.transition = "none";
+
+  slider.style.width = W + "px";
+  slider.style.height = H + "px";
+  slider.style.transform = `translate(${x}px, ${y}px)`;
+
+  if (firstShow || !animate) {
+    slider.dataset.placed = "1";
+    requestAnimationFrame(() => (slider.style.transition = ""));
+  }
 }
 
 export function mount(el) {
-  const app = document.getElementById("app");
-  app.replaceChildren(el);
+  const screenRoot = document.getElementById("screen-root");
+  screenRoot.replaceChildren(el);
   requestAnimationFrame(() => el.classList.add("screen-ready"));
+  const app = document.getElementById("app");
   app.scrollTop = 0;
   window.scrollTo(0, 0);
 }
