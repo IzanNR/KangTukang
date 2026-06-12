@@ -68,6 +68,11 @@ export function SearchingScreen() {
       statusEl,
       h("p", { class: "muted tiny center" }, "Pesanan " + order.id + " · " + s.name)
     ),
+    bottom: btn("Batalkan Pencarian", { variant: "ghost", onClick: () => {
+      updateOrder({ step: "form", workerId: null });
+      toast("Pencarian dibatalkan");
+      go("#/home");
+    } }),
   });
 }
 
@@ -77,6 +82,11 @@ export function FoundScreen() {
   const s = getService(order.serviceId);
   const w = getWorker(order.workerId);
   const cat = getCategory(s.catId);
+
+  addTimer(setTimeout(() => {
+    updateOrder({ step: "price-agreement" });
+    go("#/chat/" + order.id);
+  }, 2200));
 
   return screen({
     title: "Tukang Ditemukan",
@@ -124,12 +134,7 @@ export function FoundScreen() {
         )
       )
     ),
-    bottom: btn("Buka Penawaran di Chat", {
-      onClick: () => {
-        updateOrder({ step: "price-agreement" });
-        go("#/chat/" + order.id);
-      },
-    }),
+    bottom: btn("Membuka obrolan...", { disabled: true }),
   });
 }
 

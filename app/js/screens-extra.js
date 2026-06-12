@@ -3,10 +3,10 @@
    promo, aktivitas/riwayat, profil, top up
    ============================================================ */
 
-import { DEMO_USER, DEMO_HISTORY, VOUCHERS, TOPUP_AMOUNTS, TOPUP_METHODS, getService, getWorker } from "./data.js";
+import { DEMO_USER, DEMO_HISTORY, VOUCHERS, TOPUP_AMOUNTS, TOPUP_METHODS, getService, getWorker, getCategory } from "./data.js";
 import { wait, workerOffer, negotiatedOffer } from "./sim.js";
 import { getState, setState, updateOrder, adjustBalance, addHistory, logout } from "./store.js";
-import { h, icon, screen, btn, fmtRp, photoAvatar, toast, addTimer } from "./ui.js";
+import { h, icon, screen, btn, fmtRp, photoAvatar, toast, addTimer, stars } from "./ui.js";
 
 const go = (hash) => (location.hash = hash);
 
@@ -123,7 +123,7 @@ export function ActivityScreen() {
               "div",
               { class: "row-meta" },
               h("span", { class: "status-pill status-done" }, o.status),
-              o.rating && h("span", { class: "stars", "aria-label": "Rating tukang " + o.rating }, icon("star", "star-ic"), " Tukang " + o.rating.toFixed(1))
+              o.rating && h("span", { class: "stars", "aria-label": "Rating tukang " + o.rating }, icon("star", "star-ic"), " " + o.rating.toFixed(1))
             )
           )
         )
@@ -221,6 +221,7 @@ export function ChatScreen(threadId) {
 
   const service = getService(order.serviceId);
   const worker = getWorker(order.workerId);
+  const cat = getCategory(service.catId);
   let activeOffer = order.agreedPrice || (order.priceRevisionCount ? negotiatedOffer(workerOffer(order.estimate)) : workerOffer(order.estimate));
   let canNegotiate = order.step === "price-agreement" && !order.agreedPrice && !order.priceRevisionCount;
   let canAccept = order.step === "price-agreement" && !order.agreedPrice;
@@ -275,12 +276,27 @@ export function ChatScreen(threadId) {
   }
 
   async function sendNegotiation() {
-    if (!canNegotiate) return;
+    if (!input.value.trim()) return;
+    const text = input.value;
+    input.value = "";
     sendBtn.disabled = true;
     input.disabled = true;
-    messages.push({ from: "user", text: input.value });
+    messages.push({ from: "user", text: text });
     persist();
     renderChat();
+
+    if (!canNegotiate) {
+        composer.replaceChildren(h("div", { class: "typing-bar" }, h("span", { class: "status-orb" }), worker.name.split(" ")[0] + " sedang mengetik..."));
+        await new Promise((resolve) => addTimer(setTimeout(resolve, 900)));
+        messages.push({ from: "worker", text: "Baik Kak, ditunggu konfirmasinya." });
+        persist();
+        renderChat();
+        sendBtn.disabled = false;
+        input.disabled = false;
+        renderComposer();
+        return;
+    }
+
     composer.replaceChildren(h("div", { class: "typing-bar" }, h("span", { class: "status-orb" }), worker.name.split(" ")[0] + " sedang mengetik..."));
     await new Promise((resolve) => addTimer(setTimeout(resolve, 900)));
     const finalOffer = negotiatedOffer(activeOffer);
@@ -289,28 +305,86 @@ export function ChatScreen(threadId) {
     messages.push({ from: "worker", text: `Bisa Kak. Penawaran final saya ${fmtRp(finalOffer)}. Harga ini sudah paling sesuai untuk cakupan pekerjaannya.` });
     updateOrder({ priceRevisionCount: 1, chatMessages: messages });
     renderChat();
-    composer.replaceChildren(h("div", { class: "chat-readonly" }, icon("shield"), "Penawaran ini sudah final"));
+    sendBtn.disabled = false;
+    input.disabled = false;
+    renderComposer();
+  }
+
+  function renderComposer() {
+    if (order.agreedPrice) {
+      composer.replaceChildren(h("div", { class: "chat-readonly" }, icon("shield"), "Percakapan tersimpan · harga sudah disepakati"));
+    } else {
+      const banner = !canNegotiate ? h("div", { class: "chat-warning-banner" }, icon("shield"), "Penawaran ini sudah final.") : "";
+      composer.replaceChildren(
+        banner ? banner : "",
+        h("div", { class: "chat-composer" }, 
+          h("button", { class: "round-btn", type: "button", style: "flex-shrink:0; background:var(--surface-2); color:var(--muted); border:none;", "aria-label": "Kirim Gambar", onClick: () => toast("Fitur kirim gambar (demo)") }, icon("camera")),
+          input, 
+          sendBtn
+        )
+      );
+    }
   }
 
   const input = h("input", {
     class: "input chat-input",
-    value: "Apakah harga masih bisa disesuaikan mendekati estimasi awal?",
+    placeholder: "Tulis pesan...",
+    value: canNegotiate ? "Apakah harga masih bisa disesuaikan mendekati estimasi awal?" : "",
     "aria-label": "Tulis pesan",
   });
   const sendBtn = btn("Kirim", { small: true, full: false, onClick: sendNegotiation });
 
-  if (canNegotiate) composer.replaceChildren(h("div", { class: "chat-composer" }, input, sendBtn));
-  else composer.replaceChildren(h("div", { class: "chat-readonly" }, icon("shield"), order.agreedPrice ? "Percakapan tersimpan · harga sudah disepakati" : "Penawaran ini sudah final"));
+  renderComposer();
 
   renderChat();
+  const stickyHeader = h(
+    "div",
+    { class: "chat-sticky-head" },
+    h(
+      "div",
+      { class: "card driver-card flat" },
+      h(
+        "div",
+        { class: "driver-head" },
+        photoAvatar(worker, "big"),
+        h(
+          "div",
+          { class: "driver-info" },
+          h("strong", {}, worker.name),
+          h("span", { class: "row-sub" }, "Mitra " + cat.name + " · " + worker.years + " th pengalaman"),
+          h(
+            "div",
+            { class: "driver-badges" },
+            stars(worker.rating),
+            h("span", { class: "row-sub" }, worker.orders.toLocaleString("id-ID") + " order")
+          )
+        )
+      ),
+      order.step === "price-agreement" ? h(
+        "div",
+        { class: "inline-actions", style: "margin-top: 0;" },
+        btn("Cari Mitra Lain", { variant: "secondary", small: true, onClick: () => {
+          updateOrder({ workerId: null, agreedPrice: null, priceRevisionCount: 0, step: "searching", chatMessages: null });
+          toast("Mencari mitra lain...");
+          go("#/searching");
+        } }),
+        btn("Batalkan", { variant: "ghost", small: true, style: "color: var(--accent);", onClick: () => {
+          updateOrder({ step: "form", workerId: null, agreedPrice: null, chatMessages: null, priceRevisionCount: 0 });
+          toast("Pesanan dibatalkan");
+          go("#/home");
+        } })
+      ) : null
+    )
+  );
+
   return screen({
     title: worker.name,
     back: "#/messages",
     content: h(
       "div",
-      { class: "stack chat-page" },
-      h("div", { class: "chat-worker-head" }, photoAvatar(worker), h("div", {}, h("strong", {}, worker.name), h("span", {}, service.name + " · " + order.id))),
-      chatEl
+      { class: "chat-page" },
+      stickyHeader,
+      h("div", { class: "stack", style: "margin-top: 14px;" }, chatEl)
     ),
     bottom: composer,
   });
@@ -323,16 +397,42 @@ function archivedChatScreen(threadId) {
   }[threadId];
   if (!archive) return screen({ title: "Chat", back: "#/messages", content: h("div", { class: "empty-state card" }, h("strong", {}, "Percakapan tidak ditemukan")) });
 
+  const stickyHeader = h(
+    "div",
+    { class: "chat-sticky-head" },
+    h(
+      "div",
+      { class: "card driver-card flat" },
+      h(
+        "div",
+        { class: "driver-head" },
+        photoAvatar(archive.worker, "big"),
+        h(
+          "div",
+          { class: "driver-info" },
+          h("strong", {}, archive.worker.name),
+          h("span", { class: "row-sub" }, "Mitra · " + archive.worker.years + " th pengalaman"),
+          h(
+            "div",
+            { class: "driver-badges" },
+            stars(archive.worker.rating),
+            h("span", { class: "row-sub" }, archive.worker.orders.toLocaleString("id-ID") + " order")
+          )
+        )
+      )
+    )
+  );
+
   return screen({
     title: archive.worker.name,
     back: "#/messages",
     content: h(
       "div",
-      { class: "stack chat-page" },
-      h("div", { class: "chat-worker-head" }, photoAvatar(archive.worker), h("div", {}, h("strong", {}, archive.worker.name), h("span", {}, archive.service + " · " + threadId))),
+      { class: "chat-page" },
+      stickyHeader,
       h(
         "div",
-        { class: "chat chat-detail" },
+        { class: "stack chat-detail", style: "margin-top: 14px;" },
         h("div", { class: "chat-day" }, "Pesanan selesai"),
         ...archive.messages.map((text) => h("div", { class: "bubble worker" }, text)),
         h(

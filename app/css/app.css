@@ -1247,6 +1247,16 @@ body { max-width: 100vw; }
 .chat-worker-head div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .chat-worker-head strong { font-size: 12.5px; }
 .chat-worker-head span { color: var(--muted); font-size: 9.5px; overflow-wrap: anywhere; }
+.chat-sticky-head {
+  position: sticky;
+  top: -16px;
+  z-index: 20;
+  margin: -16px -16px 0;
+  padding: 16px 16px 10px;
+  background: rgb(247 246 242 / 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
 .chat-detail { padding: 4px 1px 16px; }
 .chat-day {
   align-self: center;
@@ -1283,6 +1293,19 @@ body { max-width: 100vw; }
   font-weight: 800;
 }
 .offer-locked svg { width: 14px; height: 14px; }
+.chat-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--brand-soft);
+  color: var(--brand-deep);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.chat-warning-banner svg { width: 14px; height: 14px; flex-shrink: 0; }
 .chat-composer-wrap { width: 100%; }
 .chat-composer { display: flex; align-items: center; gap: 8px; }
 .chat-input { min-width: 0; flex: 1; padding-block: 11px; font-size: 11px; }

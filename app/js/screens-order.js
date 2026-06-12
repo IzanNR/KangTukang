@@ -43,16 +43,32 @@ export function StartScreen() {
   });
 }
 
-/* ---------- 2. Login ---------- */
 export function LoginScreen() {
-  const input = h("input", {
-    class: "input",
-    type: "tel",
-    inputmode: "numeric",
-    placeholder: "812-3456-7890",
-    value: "812-3456-7890",
-    "aria-label": "Nomor HP",
-  });
+  const inputName = h("input", { class: "input", type: "text", placeholder: "", disabled: true });
+  const inputEmail = h("input", { class: "input", type: "email", placeholder: "", disabled: true });
+  const inputPhone = h("input", { class: "input", type: "tel", placeholder: "", disabled: true });
+
+  const loginBtn = btn("Mendaftarkan...", { disabled: true });
+
+  addTimer(setTimeout(async () => {
+    await typeText(inputName, DEMO_USER.name);
+    await wait(400);
+    await typeText(inputEmail, DEMO_USER.email);
+    await wait(400);
+    await typeText(inputPhone, DEMO_USER.phone);
+    await wait(800);
+    loginBtn.textContent = "Melanjutkan...";
+    await wait(400);
+    setState({ pendingPhone: "+62 " + DEMO_USER.phone });
+    go("#/otp");
+  }, 600));
+
+  async function typeText(el, text) {
+    for (let i = 0; i < text.length; i++) {
+      el.value += text[i];
+      await wait(Math.random() * 50 + 30);
+    }
+  }
 
   return screen({
     title: "",
@@ -64,39 +80,13 @@ export function LoginScreen() {
         "div",
         { class: "auth-hero" },
         h("img", { class: "auth-logo", src: "../assets/img/logo.png", alt: "" }),
-        h("h2", { class: "h1" }, "Selamat datang 👋"),
-        h("p", { class: "muted" }, "Masuk dengan nomor HP untuk mulai memesan layanan.")
+        h("h2", { class: "h1" }, "Selamat datang"),
+        h("p", { class: "muted" }, "Membuat akun otomatis untuk Anda...")
       ),
-      h(
-        "div",
-        { class: "field" },
-        h("span", { class: "field-label" }, "Nomor HP"),
-        h("div", { class: "phone-row" }, h("span", { class: "phone-prefix" }, "+62"), input)
-      ),
-      btn("Lanjutkan", {
-        onClick: () => {
-          const digits = (input.value || "").replace(/\D/g, "");
-          if (digits.length < 9) {
-            toast("Masukkan nomor HP yang valid");
-            return;
-          }
-          setState({ pendingPhone: "+62 " + input.value });
-          go("#/otp");
-        },
-      }),
-      h("p", { class: "muted tiny center" }, "Nomor HP digunakan untuk keamanan akun dan informasi pesanan."),
-      h(
-        "button",
-        {
-          class: "link-btn center-block",
-          type: "button",
-          onClick: () => {
-            setState({ loggedIn: true });
-            go("#/home");
-          },
-        },
-        "Masuk sebagai John Doe"
-      )
+      h("div", { class: "field" }, h("span", { class: "field-label" }, "Nama Lengkap"), inputName),
+      h("div", { class: "field" }, h("span", { class: "field-label" }, "Email"), inputEmail),
+      h("div", { class: "field" }, h("span", { class: "field-label" }, "Nomor HP"), inputPhone),
+      loginBtn
     ),
   });
 }
