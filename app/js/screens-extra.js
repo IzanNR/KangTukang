@@ -228,9 +228,12 @@ export function ChatScreen(threadId) {
   const worker = getWorker(order.workerId);
   const cat = getCategory(service.catId);
 
-  /* konteks progress: chat tahu pekerjaan sedang di tahap apa */
+  /* konteks live: chat tahu sedang di fase apa (perjalanan / pengerjaan) */
   const inProgress = order.step === "progress";
+  const inTransit = order.step === "tracking";
+  const isLive = inProgress || inTransit;
   const progressLabel = order.progressLabel || "Persiapan";
+  const stageLabel = inProgress ? progressLabel : "Dalam perjalanan";
   const progressPhoto = getProgressPhoto(service.catId);
 
   let activeOffer = order.agreedPrice || (order.priceRevisionCount ? negotiatedOffer(workerOffer(order.estimate)) : workerOffer(order.estimate));
@@ -309,7 +312,7 @@ export function ChatScreen(threadId) {
     input.value = "";
     sendBtn.disabled = true;
     input.disabled = true;
-    messages.push(inProgress ? { from: "user", text: text, state: progressLabel } : { from: "user", text: text });
+    messages.push(isLive ? { from: "user", text: text, state: stageLabel } : { from: "user", text: text });
     persist();
     renderChat();
 
@@ -319,6 +322,8 @@ export function ChatScreen(threadId) {
         messages.push(
           inProgress
             ? { from: "worker", text: "Siap Kak 👍 Saya lanjutkan pekerjaannya ya.", state: progressLabel }
+            : inTransit
+            ? { from: "worker", text: "Siap Kak, saya sedang menuju lokasi 🛵", state: stageLabel }
             : { from: "worker", text: "Baik Kak, ditunggu konfirmasinya." }
         );
         persist();
@@ -369,12 +374,21 @@ export function ChatScreen(threadId) {
   }
 
   function sendWhereAreWe() {
-    messages.push({ from: "user", text: "Sudah sampai mana, Pak?", state: progressLabel });
+    messages.push({ from: "user", text: inTransit ? "Sudah di mana, Pak?" : "Sudah sampai mana, Pak?", state: stageLabel });
     persist();
     renderChat();
     workerReplies([
-      { from: "worker", text: "Sekarang sedang tahap “" + progressLabel + "” Kak. Aman, sesuai rencana 👍", state: progressLabel },
+      inTransit
+        ? { from: "worker", text: "Saya sedang di jalan menuju lokasi Kak, sebentar lagi sampai 🛵", state: stageLabel }
+        : { from: "worker", text: "Sekarang sedang tahap “" + progressLabel + "” Kak. Aman, sesuai rencana 👍", state: progressLabel },
     ]);
+  }
+
+  function sendCareful() {
+    messages.push({ from: "user", text: "Hati-hati di jalan, Pak 🙏" });
+    persist();
+    renderChat();
+    workerReplies([{ from: "worker", text: "Siap, terima kasih Kak 🙏" }]);
   }
 
   function sendThanks() {
@@ -385,15 +399,19 @@ export function ChatScreen(threadId) {
   }
 
   function renderComposer() {
-    if (inProgress) {
+    if (isLive) {
+      const quicks = inProgress
+        ? [
+            quickReply("Bisa saya lihat progressnya? 📷", sendPhotoRequest),
+            quickReply("Sudah sampai mana, Pak?", sendWhereAreWe),
+            quickReply("Terima kasih 🙏", sendThanks),
+          ]
+        : [
+            quickReply("Sudah di mana, Pak?", sendWhereAreWe),
+            quickReply("Hati-hati di jalan 🙏", sendCareful),
+          ];
       composer.replaceChildren(
-        h(
-          "div",
-          { class: "quick-replies" },
-          quickReply("Bisa saya lihat progressnya? 📷", sendPhotoRequest),
-          quickReply("Sudah sampai mana, Pak?", sendWhereAreWe),
-          quickReply("Terima kasih 🙏", sendThanks)
-        ),
+        h("div", { class: "quick-replies" }, quicks),
         h(
           "div",
           { class: "chat-composer" },
@@ -458,6 +476,13 @@ export function ChatScreen(threadId) {
             icon("wrench"),
             h("span", {}, "Sedang dikerjakan: ", h("strong", {}, progressLabel))
           )
+        : inTransit
+        ? h(
+            "div",
+            { class: "chat-progress-chip" },
+            icon("pin"),
+            h("span", {}, h("strong", {}, worker.name.split(" ")[0]), " sedang menuju lokasi Anda 🛵")
+          )
         : null,
       order.step === "price-agreement" ? h(
         "div",
@@ -478,7 +503,7 @@ export function ChatScreen(threadId) {
 
   return screen({
     title: worker.name,
-    back: inProgress ? "#/progress" : "#/messages",
+    back: inProgress ? "#/progress" : inTransit ? "#/tracking" : "#/messages",
     content: h(
       "div",
       { class: "chat-page" },

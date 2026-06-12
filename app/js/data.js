@@ -431,12 +431,11 @@ export const SERVICES = [
    mengubah URL, atau arahkan ke file lokal mis. "img/mitra-1.jpg".
 */
 export const WORKERS = [
-  { id: "w1", name: "Joko Susilo", skills: ["ac", "elektronik"], rating: 4.9, orders: 1320, years: 8, distanceKm: 1.2, vehicle: "Motor · L 4321 KT", photo: "https://i.pravatar.cc/150?img=53" },
-  { id: "w2", name: "Budi Santoso", skills: ["listrik"], rating: 4.9, orders: 1480, years: 10, distanceKm: 0.8, vehicle: "Motor · L 2456 BS", photo: "https://i.pravatar.cc/150?img=59" },
-  { id: "w3", name: "Slamet Riyadi", skills: ["pipa", "renovasi"], rating: 4.8, orders: 905, years: 12, distanceKm: 2.1, vehicle: "Motor · L 7812 SR", photo: "https://i.pravatar.cc/150?img=68" },
-  { id: "w4", name: "Sri Wahyuni", skills: ["cleaning"], rating: 4.9, orders: 2150, years: 5, distanceKm: 1.5, vehicle: "Motor · L 3344 SW", photo: "https://i.pravatar.cc/150?img=47" },
-  { id: "w5", name: "Agus Priyanto", skills: ["renovasi", "pipa"], rating: 4.7, orders: 610, years: 9, distanceKm: 2.8, vehicle: "Pickup · L 9087 AP", photo: "https://i.pravatar.cc/150?img=60" },
-  { id: "w6", name: "Dimas Saputra", skills: ["ac", "listrik", "elektronik"], rating: 4.8, orders: 760, years: 6, distanceKm: 1.9, vehicle: "Motor · L 5610 DS", photo: "https://i.pravatar.cc/150?img=57" },
+  { id: "w1", name: "Kang Kung", skills: ["ac", "elektronik"], rating: 4.9, orders: 1320, years: 67, distanceKm: 1.2, vehicle: "Motor · L 4321 KT", photo: "img/workers/Kang Kung.png" },
+  { id: "w2", name: "El Mubarok", skills: ["listrik", "elektronik"], rating: 4.9, orders: 1480, years: 10, distanceKm: 0.8, vehicle: "Motor · L 2456 EM", photo: "img/workers/El Mubarok.png" },
+  { id: "w3", name: "Kang Izan", skills: ["pipa", "renovasi"], rating: 4.8, orders: 905, years: 12, distanceKm: 2.1, vehicle: "Motor · L 7812 KI", photo: "img/workers/Kang Izan.png" },
+  { id: "w4", name: "Naufy", skills: ["cleaning"], rating: 4.9, orders: 2150, years: 5, distanceKm: 1.5, vehicle: "Motor · L 3344 NF", photo: "img/workers/Naufy.png" },
+  { id: "w5", name: "King Daud", skills: ["renovasi", "pipa"], rating: 4.7, orders: 610, years: 9, distanceKm: 2.8, vehicle: "Pickup · L 9087 KD", photo: "img/workers/King Daud.png" },
 ];
 
 /* ---------- Promo & voucher ---------- */
