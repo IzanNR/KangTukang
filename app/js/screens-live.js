@@ -62,7 +62,7 @@ export function SearchingScreen() {
         h("span", { class: "radar-ring r1" }),
         h("span", { class: "radar-ring r2" }),
         h("span", { class: "radar-ring r3" }),
-        h("span", { class: "radar-icon" }, icon("wrench"))
+        h("img", { src: "../assets/img/logo.png", alt: "KangTukang Logo", style: "position:relative; z-index:2; width: 110px; height: 130px; object-fit: contain; filter: drop-shadow(0 8px 24px rgba(224,178,34,0.45));" })
       ),
       h("h2", { class: "h2 center" }, "Mencari tukang untukmu…"),
       statusEl,

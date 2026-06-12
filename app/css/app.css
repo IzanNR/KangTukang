@@ -433,9 +433,11 @@ img { display: block; }
 .wallet-act:active { background: rgb(255 255 255 / 0.1); }
 
 .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 4px; }
-.cat-card { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 10px 2px; border-radius: var(--radius); transition: background 0.15s ease; }
-.cat-card:active { background: var(--surface); }
-.cat-ic { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 16px; }
+.cat-card { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 10px 2px; border-radius: var(--radius); border: 1px solid transparent; transition: transform 0.25s cubic-bezier(.22,1,.36,1), box-shadow 0.25s ease, border-color 0.25s ease, background 0.15s ease; }
+.cat-card:active { background: var(--surface); transform: scale(0.96); }
+.cat-card:hover { transform: translateY(-3px); border-color: var(--line); background: var(--surface); box-shadow: 0 4px 12px rgb(23 25 22 / 0.05); }
+.cat-card:hover .cat-ic { transform: scale(1.05) rotate(3deg); box-shadow: 2px 2px 0 rgb(23 25 22 / 0.1); }
+.cat-ic { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 4px; border: 1.5px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); transition: transform 0.3s ease, box-shadow 0.3s ease; }
 .cat-ic svg { width: 23px; height: 23px; }
 .cat-name { font-size: 10.5px; font-weight: 600; color: var(--text); text-align: center; line-height: 1.25; }
 .soon-badge {
@@ -486,9 +488,14 @@ img { display: block; }
   box-shadow: var(--shadow-card);
   transition: transform 0.12s ease, border-color 0.15s ease;
 }
+.service-row { position: relative; overflow: hidden; transition: transform 0.25s cubic-bezier(.22,1,.36,1), box-shadow 0.25s ease, border-color 0.25s ease; }
+.service-row::after { content: ""; position: absolute; left: 0; bottom: 0; right: 0; height: 3px; background: var(--brand); transform: scaleX(0); transform-origin: left; transition: transform 0.35s ease; }
+.service-row:hover { border-color: var(--ink); box-shadow: 4px 4px 0 rgb(23 25 22 / 0.15); transform: translate(-2px, -2px); }
+.service-row:hover::after { transform: scaleX(1); }
+.service-row:hover .row-icon svg { transform: translateY(-2px) rotate(-5deg) scale(1.1); transition: transform 0.35s cubic-bezier(.22,1,.36,1); }
 .list-row:active, .loc-row:active, .menu-row:active { transform: scale(0.985); }
 .loc-row.active { border-color: var(--brand); box-shadow: 0 0 0 3px rgb(224 178 34 / 0.15); }
-.row-icon { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border-radius: 13px; }
+.row-icon { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border-radius: 4px; border: 1.5px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); }
 .row-icon svg { width: 20px; height: 20px; }
 .row-main { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .row-main strong { font-size: 13.5px; color: var(--ink); }
@@ -523,7 +530,7 @@ img { display: block; }
 
 /* ---------- Detail layanan ---------- */
 .service-hero { display: flex; gap: 14px; align-items: center; }
-.hero-icon { display: grid; place-items: center; flex: 0 0 58px; height: 58px; border-radius: 17px; }
+.hero-icon { display: grid; place-items: center; flex: 0 0 58px; height: 58px; border-radius: 4px; border: 1.5px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
 .hero-icon svg { width: 26px; height: 26px; }
 .service-meta { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin: 4px 0 0; }
 

@@ -284,7 +284,7 @@ function serviceRow(s) {
   const cat = getCategory(s.catId);
   return h(
     "button",
-    { class: "list-row", type: "button", onClick: () => go("#/service/" + s.id) },
+    { class: "list-row service-row", type: "button", onClick: () => go("#/service/" + s.id) },
     h("span", { class: "row-icon tint-" + cat.tint }, icon(cat.icon)),
     h(
       "div",
@@ -408,15 +408,19 @@ export function ServiceScreen(serviceId) {
             : "Harga final dikonfirmasi sebelum pengerjaan dimulai."
         )
       ),
-      h("h3", { class: "h3" }, "Tentang layanan"),
-      h("p", { class: "body-text" }, s.desc),
       h(
-        "ul",
-        { class: "perk-list" },
-        h("li", {}, "Mitra terverifikasi identitas & keahlian"),
-        h("li", {}, "Harga transparan, tanpa biaya tersembunyi"),
-        h("li", {}, "Garansi pengerjaan 7 hari"),
-        h("li", {}, "Progres pengerjaan bisa dipantau langsung")
+        "div",
+        { class: "card stack" },
+        h("h3", { class: "h3", style: "margin:0;" }, "Tentang layanan"),
+        h("p", { class: "body-text", style: "margin:0;" }, s.desc),
+        h(
+          "ul",
+          { class: "perk-list", style: "margin-top:4px;" },
+          h("li", {}, "Mitra terverifikasi identitas & keahlian"),
+          h("li", {}, "Harga transparan, tanpa biaya tersembunyi"),
+          h("li", {}, "Garansi pengerjaan 7 hari"),
+          h("li", {}, "Progres pengerjaan bisa dipantau langsung")
+        )
       )
     ),
     bottom: btn("Pesan Layanan Ini", {
