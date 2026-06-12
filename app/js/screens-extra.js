@@ -4,9 +4,9 @@
    ============================================================ */
 
 import { DEMO_USER, DEMO_HISTORY, VOUCHERS, TOPUP_AMOUNTS, TOPUP_METHODS, getService, getWorker } from "./data.js";
-import { wait } from "./sim.js";
-import { getState, setState, adjustBalance, addHistory, logout } from "./store.js";
-import { h, icon, screen, btn, fmtRp, photoAvatar, toast } from "./ui.js";
+import { wait, workerOffer, negotiatedOffer } from "./sim.js";
+import { getState, setState, updateOrder, adjustBalance, addHistory, logout } from "./store.js";
+import { h, icon, screen, btn, fmtRp, photoAvatar, toast, addTimer } from "./ui.js";
 
 const go = (hash) => (location.hash = hash);
 
@@ -72,16 +72,15 @@ export function ActivityScreen() {
   /* pesanan aktif */
   if (st.order && st.order.step && st.order.step !== "done") {
     const s = getService(st.order.serviceId);
-    const stepHash = {
+    const stepHash = st.order.step === "price-agreement" ? "#/chat/" + st.order.id : ({
       form: "#/form",
       searching: "#/searching",
       found: "#/found",
-      "price-agreement": "#/price-agreement",
       tracking: "#/tracking",
       progress: "#/progress",
       payment: "#/payment",
       rating: "#/rating",
-    }[st.order.step] || "#/home";
+    }[st.order.step] || "#/home");
     items.push(
       h("h3", { class: "h3" }, "Sedang berlangsung"),
       h(
@@ -145,14 +144,15 @@ export function MessagesScreen() {
   const order = st.order;
   const service = order ? getService(order.serviceId) : null;
   const worker = order && order.workerId ? getWorker(order.workerId) : null;
+  const isActive = order && order.step && order.step !== "done";
 
-  const activeThread = worker
+  const activeThread = worker && isActive
     ? h(
         "button",
         {
           class: "list-row message-thread",
           type: "button",
-          onClick: () => go(order.step === "price-agreement" ? "#/price-agreement" : "#/" + (order.step || "activity")),
+          onClick: () => go("#/chat/" + order.id),
         },
         photoAvatar(worker),
         h(
@@ -166,16 +166,185 @@ export function MessagesScreen() {
       )
     : h(
         "div",
-        { class: "empty-state card" },
+        { class: "empty-state compact-empty" },
         icon("chat"),
-        h("strong", {}, "Belum ada percakapan"),
-        h("p", { class: "muted tiny" }, "Percakapan dengan tukang akan muncul setelah pesanan diterima.")
+        h("p", { class: "muted tiny" }, "Tidak ada chat layanan yang sedang aktif.")
       );
+
+  const archived = [
+    ...(worker && !isActive
+      ? [{ id: order.id, worker, serviceName: service.name, preview: "Pesanan selesai. Terima kasih sudah menggunakan layanan saya." }]
+      : []),
+    { id: "KT-8821", worker: getWorker("w1"), serviceName: "Cuci AC Rutin", preview: "AC sudah dites dan dingin kembali, Kak." },
+    { id: "KT-8514", worker: getWorker("w4"), serviceName: "Cleaning Reguler", preview: "Seluruh ruangan sudah selesai dibersihkan." },
+  ];
 
   return screen({
     title: "Pesan",
     nav: "messages",
-    content: h("div", { class: "stack page-section" }, h("h3", { class: "h3" }, "Percakapan"), activeThread),
+    content: h(
+      "div",
+      { class: "stack page-section" },
+      h("div", { class: "message-section-title active" }, h("span", { class: "status-orb" }), h("h3", { class: "h3" }, "Layanan aktif")),
+      activeThread,
+      h("div", { class: "message-section-title" }, h("h3", { class: "h3" }, "Chat sebelumnya"), h("span", {}, archived.length + " percakapan")),
+      h(
+        "div",
+        { class: "list" },
+        archived.map((item) =>
+          h(
+            "button",
+            { class: "list-row message-thread archived", type: "button", onClick: () => go("#/chat/" + item.id) },
+            photoAvatar(item.worker),
+            h(
+              "div",
+              { class: "row-main" },
+              h("strong", {}, item.worker.name),
+              h("span", { class: "row-sub message-preview" }, item.preview),
+              h("span", { class: "message-context" }, item.serviceName)
+            ),
+            icon("chevR", "chev")
+          )
+        )
+      )
+    ),
+  });
+}
+
+/* ---------- Detail chat ---------- */
+export function ChatScreen(threadId) {
+  const st = getState();
+  const order = st.order;
+  const isCurrent = !!order && order.id === threadId;
+
+  if (!isCurrent) return archivedChatScreen(threadId);
+
+  const service = getService(order.serviceId);
+  const worker = getWorker(order.workerId);
+  let activeOffer = order.agreedPrice || (order.priceRevisionCount ? negotiatedOffer(workerOffer(order.estimate)) : workerOffer(order.estimate));
+  let canNegotiate = order.step === "price-agreement" && !order.agreedPrice && !order.priceRevisionCount;
+  let canAccept = order.step === "price-agreement" && !order.agreedPrice;
+
+  let messages = order.chatMessages?.length
+    ? [...order.chatMessages]
+    : [
+        { from: "worker", text: `Halo Kak John, saya sudah meninjau detail pekerjaan ${service.name}.` },
+        { from: "worker", text: "Penawaran saya sudah termasuk jasa, alat kerja, dan pembersihan area setelah selesai." },
+      ];
+  if (!order.chatMessages?.length) updateOrder({ chatMessages: messages });
+
+  const chatEl = h("div", { class: "chat chat-detail" });
+  const composer = h("div", { class: "chat-composer-wrap" });
+
+  function persist() {
+    updateOrder({ chatMessages: messages });
+  }
+
+  function offerBubble() {
+    const disabled = !canAccept;
+    return h(
+      "div",
+      { class: "chat-offer-card" + (disabled ? " inactive" : "") },
+      h("span", { class: "price-box-label" }, order.agreedPrice ? "Harga jasa disepakati" : !canNegotiate ? "Penawaran final tukang" : "Penawaran harga jasa"),
+      h("strong", {}, fmtRp(activeOffer)),
+      h("span", { class: "muted tiny" }, "Belum termasuk promo dan biaya aplikasi"),
+      disabled
+        ? h("span", { class: "offer-locked" }, icon("check"), "Harga telah dikunci")
+        : btn("Setujui Harga", { small: true, onClick: acceptOffer })
+    );
+  }
+
+  function renderChat() {
+    chatEl.replaceChildren(
+      h("div", { class: "chat-day" }, isCurrent && order.step !== "done" ? "Hari ini · Pesanan aktif" : "Riwayat percakapan"),
+      ...messages.map((m) => h("div", { class: "bubble " + m.from }, m.text)),
+      offerBubble()
+    );
+    requestAnimationFrame(() => {
+      const sc = document.querySelector(".screen-body");
+      if (sc) sc.scrollTop = sc.scrollHeight;
+    });
+  }
+
+  function acceptOffer() {
+    messages.push({ from: "user", text: `Saya setuju dengan harga jasa ${fmtRp(activeOffer)}.` });
+    persist();
+    updateOrder({ agreedPrice: activeOffer, priceAgreedAt: new Date().toISOString(), step: "tracking" });
+    toast("Harga disepakati dan dikunci");
+    go("#/tracking");
+  }
+
+  async function sendNegotiation() {
+    if (!canNegotiate) return;
+    sendBtn.disabled = true;
+    input.disabled = true;
+    messages.push({ from: "user", text: input.value });
+    persist();
+    renderChat();
+    composer.replaceChildren(h("div", { class: "typing-bar" }, h("span", { class: "status-orb" }), worker.name.split(" ")[0] + " sedang mengetik..."));
+    await new Promise((resolve) => addTimer(setTimeout(resolve, 900)));
+    const finalOffer = negotiatedOffer(activeOffer);
+    activeOffer = finalOffer;
+    canNegotiate = false;
+    messages.push({ from: "worker", text: `Bisa Kak. Penawaran final saya ${fmtRp(finalOffer)}. Harga ini sudah paling sesuai untuk cakupan pekerjaannya.` });
+    updateOrder({ priceRevisionCount: 1, chatMessages: messages });
+    renderChat();
+    composer.replaceChildren(h("div", { class: "chat-readonly" }, icon("shield"), "Penawaran ini sudah final"));
+  }
+
+  const input = h("input", {
+    class: "input chat-input",
+    value: "Apakah harga masih bisa disesuaikan mendekati estimasi awal?",
+    "aria-label": "Tulis pesan",
+  });
+  const sendBtn = btn("Kirim", { small: true, full: false, onClick: sendNegotiation });
+
+  if (canNegotiate) composer.replaceChildren(h("div", { class: "chat-composer" }, input, sendBtn));
+  else composer.replaceChildren(h("div", { class: "chat-readonly" }, icon("shield"), order.agreedPrice ? "Percakapan tersimpan · harga sudah disepakati" : "Penawaran ini sudah final"));
+
+  renderChat();
+  return screen({
+    title: worker.name,
+    back: "#/messages",
+    content: h(
+      "div",
+      { class: "stack chat-page" },
+      h("div", { class: "chat-worker-head" }, photoAvatar(worker), h("div", {}, h("strong", {}, worker.name), h("span", {}, service.name + " · " + order.id))),
+      chatEl
+    ),
+    bottom: composer,
+  });
+}
+
+function archivedChatScreen(threadId) {
+  const archive = {
+    "KT-8821": { worker: getWorker("w1"), service: "Cuci AC Rutin", offer: 150000, messages: ["Halo Kak, saya segera menuju lokasi.", "Pembersihan selesai. AC sudah dites dan dingin kembali, Kak."] },
+    "KT-8514": { worker: getWorker("w4"), service: "Cleaning Reguler", offer: 210000, messages: ["Saya sudah tiba di lokasi.", "Seluruh ruangan sudah selesai dibersihkan. Terima kasih, Kak."] },
+  }[threadId];
+  if (!archive) return screen({ title: "Chat", back: "#/messages", content: h("div", { class: "empty-state card" }, h("strong", {}, "Percakapan tidak ditemukan")) });
+
+  return screen({
+    title: archive.worker.name,
+    back: "#/messages",
+    content: h(
+      "div",
+      { class: "stack chat-page" },
+      h("div", { class: "chat-worker-head" }, photoAvatar(archive.worker), h("div", {}, h("strong", {}, archive.worker.name), h("span", {}, archive.service + " · " + threadId))),
+      h(
+        "div",
+        { class: "chat chat-detail" },
+        h("div", { class: "chat-day" }, "Pesanan selesai"),
+        ...archive.messages.map((text) => h("div", { class: "bubble worker" }, text)),
+        h(
+          "div",
+          { class: "chat-offer-card inactive" },
+          h("span", { class: "price-box-label" }, "Harga jasa disepakati"),
+          h("strong", {}, fmtRp(archive.offer)),
+          h("span", { class: "offer-locked" }, icon("check"), "Pesanan telah selesai")
+        )
+      )
+    ),
+    bottom: h("div", { class: "chat-readonly" }, icon("doc"), "Percakapan lama hanya dapat dilihat"),
   });
 }
 

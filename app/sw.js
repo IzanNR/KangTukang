@@ -1,5 +1,5 @@
 /* KangTukang Demo — Service worker sederhana (cache asset statis) */
-const CACHE = "kt-app-v4";
+const CACHE = "kt-app-v5";
 const ASSETS = [
   "./index.html",
   "./css/app.css",

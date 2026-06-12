@@ -124,10 +124,10 @@ export function FoundScreen() {
         )
       )
     ),
-    bottom: btn("Tinjau Penawaran Harga", {
+    bottom: btn("Buka Penawaran di Chat", {
       onClick: () => {
         updateOrder({ step: "price-agreement" });
-        go("#/price-agreement");
+        go("#/chat/" + order.id);
       },
     }),
   });
@@ -188,13 +188,8 @@ export function PriceAgreementScreen() {
       priceAgreedAt: new Date().toISOString(),
       step: "tracking",
     });
-    statusEl.className = "agreement-status accepted";
-    statusEl.replaceChildren(
-      icon("check"),
-      h("div", {}, h("strong", {}, "Harga disepakati dua arah"), h("span", {}, "Harga jasa terkunci dan tidak berubah sepihak"))
-    );
-    actions.replaceChildren(btn("Lacak Kedatangan Tukang", { onClick: () => go("#/tracking") }));
     toast("Harga jasa terkunci. Promo tetap dipotong saat pembayaran.");
+    go("#/tracking");
   }
 
   async function recalculate() {
@@ -265,7 +260,12 @@ export function PriceAgreementScreen() {
         )
       )
     ),
-    bottom: actions,
+    bottom: h(
+      "div",
+      { class: "stack-sm" },
+      actions,
+      btn("Buka Chat Lengkap", { variant: "secondary", onClick: () => go("#/chat/" + order.id) })
+    ),
   });
 }
 
@@ -331,14 +331,11 @@ export function TrackingScreen() {
       svgPin.el.style.left = last.x + "%";
       svgPin.el.style.top = last.y + "%";
     }
-    bottomEl.replaceChildren(
-      btn("Mulai Pengerjaan", {
-        onClick: () => {
-          updateOrder({ step: "progress" });
-          go("#/progress");
-        },
-      })
-    );
+    bottomEl.replaceChildren(h("div", { class: "arrival-wait" }, h("span", { class: "status-orb" }), h("span", {}, "Tukang memulai pemeriksaan awal")));
+    addTimer(setTimeout(() => {
+      updateOrder({ step: "progress" });
+      go("#/progress");
+    }, 1100));
   }
 
   const tick = addTimer(
@@ -389,7 +386,7 @@ export function TrackingScreen() {
           h(
             "div",
             { class: "contact-btns" },
-            h("button", { class: "round-btn", type: "button", "aria-label": "Chat", onClick: () => go("#/messages") }, icon("chat")),
+            h("button", { class: "round-btn", type: "button", "aria-label": "Chat", onClick: () => go("#/chat/" + order.id) }, icon("chat")),
             h("button", { class: "round-btn", type: "button", "aria-label": "Telepon", onClick: () => toast("Menghubungi " + w.name.split(" ")[0] + "...") }, icon("phone"))
           )
         )
@@ -507,9 +504,7 @@ export function ProgressScreen() {
   }
 
   function render() {
-    const visible = plan
-      .map((step, idx) => ({ step, idx }))
-      .filter(({ idx }) => idx >= Math.max(0, current - 2) && idx <= Math.min(plan.length - 1, current + 1));
+    const visible = plan.map((step, idx) => ({ step, idx }));
 
     listEl.replaceChildren(
       ...visible.map(({ step, idx }) => {

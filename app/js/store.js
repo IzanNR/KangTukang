@@ -61,6 +61,7 @@ export function newOrder(serviceId) {
     agreedPrice: null,
     priceRevisionCount: 0,
     priceAgreedAt: null,
+    chatMessages: [],
     workerId: null,
     extraCosts: [],
     progressSteps: null,

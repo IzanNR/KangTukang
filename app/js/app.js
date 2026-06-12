@@ -11,10 +11,10 @@ import {
   EstimateScreen, CheckoutScreen,
 } from "./screens-order.js";
 import {
-  SearchingScreen, FoundScreen, PriceAgreementScreen, TrackingScreen, ProgressScreen,
+  SearchingScreen, FoundScreen, TrackingScreen, ProgressScreen,
   PaymentScreen, RatingScreen, DoneScreen,
 } from "./screens-live.js";
-import { PromoScreen, ActivityScreen, MessagesScreen, ProfileScreen, TopupScreen } from "./screens-extra.js";
+import { PromoScreen, ActivityScreen, MessagesScreen, ChatScreen, ProfileScreen, TopupScreen } from "./screens-extra.js";
 
 /* Reset via query param: ?mode=expo&reset=true (untuk QR code expo) */
 (function handleQuery() {
@@ -34,6 +34,7 @@ const routes = [
   { match: /^#\/promo$/, render: () => PromoScreen(), needLogin: true },
   { match: /^#\/activity$/, render: () => ActivityScreen(), needLogin: true },
   { match: /^#\/messages$/, render: () => MessagesScreen(), needLogin: true },
+  { match: /^#\/chat\/([\w-]+)$/, render: (m) => ChatScreen(m[1]), needLogin: true },
   { match: /^#\/profile$/, render: () => ProfileScreen(), needLogin: true },
   { match: /^#\/topup$/, render: () => TopupScreen(), needLogin: true },
   { match: /^#\/category\/([\w-]+)$/, render: (m) => CategoryScreen(m[1]), needLogin: true },
@@ -44,7 +45,7 @@ const routes = [
   { match: /^#\/checkout$/, render: () => CheckoutScreen(), needOrder: true },
   { match: /^#\/searching$/, render: () => SearchingScreen(), needOrder: true },
   { match: /^#\/found$/, render: () => FoundScreen(), needOrder: true },
-  { match: /^#\/price-agreement$/, render: () => PriceAgreementScreen(), needOrder: true },
+  { match: /^#\/price-agreement$/, render: () => ChatScreen(getState().order.id), needOrder: true },
   { match: /^#\/tracking$/, render: () => TrackingScreen(), needOrder: true },
   { match: /^#\/progress$/, render: () => ProgressScreen(), needOrder: true },
   { match: /^#\/payment$/, render: () => PaymentScreen(), needOrder: true },

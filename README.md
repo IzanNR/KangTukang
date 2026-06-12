@@ -62,7 +62,7 @@ Tidak perlu build. Deploy folder ini sebagai static site:
 
 Start → Login demo → Beranda → Pilih kategori & layanan → Detail kebutuhan → Lokasi → Estimasi → Konfirmasi detail & promo → Mencari tukang → Tukang ditemukan → Persetujuan harga jasa dua arah (setuju, hitung ulang, atau cari mitra lain) → Tracking → Progress pengerjaan realtime (tahapan baru hanya muncul saat ditemukan dan biaya tambahan wajib disetujui) → Pembayaran setelah promo → Rating tukang → Selesai / Ulangi demo.
 
-Proses pencarian, kedatangan, dan progress berjalan otomatis agar alurnya terasa seperti aplikasi produksi. Hanya keputusan penting seperti persetujuan harga, rekomendasi berbayar, dan pembayaran yang membutuhkan aksi pengguna.
+Proses pencarian, kedatangan, mulai pengerjaan, dan progress berjalan otomatis agar alurnya terasa seperti aplikasi produksi. Negosiasi harga berlangsung melalui chat tersimpan dengan kartu penawaran interaktif; setelah pesanan tidak aktif, percakapan tetap tersedia sebagai arsip read-only.
 
 ## Mengedit data dummy
 
