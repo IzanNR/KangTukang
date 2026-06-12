@@ -1032,44 +1032,93 @@ export function CheckoutScreen() {
   }
   renderPrice();
 
-  /* baris voucher */
-  const voucherRow = h("div", {});
+  /* baris voucher — bisa memilih dari voucher yang tersedia */
+  const voucherRow = h("div", { class: "stack-sm" });
+  let pickerOpen = false;
+
+  function applyVoucher(code) {
+    voucherCode = code;
+    updateOrder({ voucher: code });
+    setState({ activeVoucher: code });
+    renderVoucher();
+    renderPrice();
+    toast(code ? "Voucher " + code + " dipakai 🎉" : "Tanpa voucher");
+  }
+
   function renderVoucher() {
     const v = voucherCode ? getVoucher(voucherCode) : null;
-    voucherRow.replaceChildren(
-      h(
-        "button",
-        {
-          class: "list-row",
-          type: "button",
-          onClick: () => {
-            if (v) {
-              voucherCode = null;
-              updateOrder({ voucher: null });
-              setState({ activeVoucher: null });
-              renderVoucher();
-              renderPrice();
-              toast("Voucher dilepas");
-            } else {
-              voucherCode = "HEMAT10";
-              updateOrder({ voucher: voucherCode });
-              setState({ activeVoucher: voucherCode });
-              renderVoucher();
-              renderPrice();
-              toast("Voucher HEMAT10 dipakai 🎉");
-            }
-          },
+    const selectable = VOUCHERS.filter((x) => x.type === "pct" || x.type === "fee");
+
+    const headRow = h(
+      "button",
+      {
+        class: "list-row",
+        type: "button",
+        onClick: () => {
+          pickerOpen = !pickerOpen;
+          renderVoucher();
         },
-        h("span", { class: "row-icon tint-yellow" }, icon("tag")),
+      },
+      h("span", { class: "row-icon tint-yellow" }, icon("tag")),
+      h(
+        "div",
+        { class: "row-main" },
+        h("strong", {}, v ? "Voucher " + v.code + " terpakai" : "Pakai voucher promo"),
+        h("span", { class: "row-sub" }, v ? v.title : selectable.length + " voucher tersedia — ketuk untuk memilih")
+      ),
+      h("span", { class: "link-btn" }, pickerOpen ? "Tutup" : v ? "Ganti" : "Pilih")
+    );
+
+    const rows = [headRow];
+    if (pickerOpen) {
+      rows.push(
         h(
           "div",
-          { class: "row-main" },
-          h("strong", {}, v ? "Voucher " + v.code + " terpakai" : "Pakai voucher promo"),
-          h("span", { class: "row-sub" }, v ? v.title : "Diskon 10% s/d Rp25.000 tersedia")
-        ),
-        h("span", { class: "link-btn" }, v ? "Lepas" : "Pakai")
-      )
-    );
+          { class: "voucher-picker" },
+          selectable.map((opt) =>
+            h(
+              "button",
+              {
+                class: "loc-row" + (voucherCode === opt.code ? " active" : ""),
+                type: "button",
+                onClick: () => {
+                  pickerOpen = false;
+                  applyVoucher(opt.code);
+                },
+              },
+              h("span", { class: "row-icon tint-yellow" }, icon("tag")),
+              h(
+                "div",
+                { class: "row-main" },
+                h("strong", {}, opt.code),
+                h("span", { class: "row-sub" }, opt.title + " · " + opt.desc)
+              ),
+              h("span", { class: "radio" + (voucherCode === opt.code ? " on" : "") })
+            )
+          ),
+          h(
+            "button",
+            {
+              class: "loc-row" + (!voucherCode ? " active" : ""),
+              type: "button",
+              onClick: () => {
+                pickerOpen = false;
+                applyVoucher(null);
+              },
+            },
+            h("span", { class: "row-icon", style: "background:var(--surface-2);color:var(--muted)" }, icon("tag")),
+            h(
+              "div",
+              { class: "row-main" },
+              h("strong", {}, "Tanpa voucher"),
+              h("span", { class: "row-sub" }, "Tidak memakai promo untuk pesanan ini")
+            ),
+            h("span", { class: "radio" + (!voucherCode ? " on" : "") })
+          )
+        )
+      );
+    }
+    voucherRow.replaceChildren(...rows);
   }
   renderVoucher();
 

@@ -12,16 +12,13 @@ const go = (hash) => (location.hash = hash);
 
 /* ---------- Promo ---------- */
 export function PromoScreen() {
-  const st = getState();
+  const listEl = h("div", { class: "stack" });
 
-  return screen({
-    title: "Promo & Voucher",
-    nav: "promo",
-    content: h(
-      "div",
-      { class: "stack" },
-      h("p", { class: "muted tiny" }, "Pilih voucher yang ingin digunakan pada pesanan berikutnya."),
-      VOUCHERS.map((v) => {
+  /* render ulang di tempat — tanpa pindah halaman */
+  function renderVouchers() {
+    const st = getState();
+    listEl.replaceChildren(
+      ...VOUCHERS.map((v) => {
         const used = st.activeVoucher === v.code;
         return h(
           "div",
@@ -53,7 +50,7 @@ export function PromoScreen() {
                         setState({ activeVoucher: v.code });
                         toast("Voucher " + v.code + " siap dipakai saat checkout 🎉");
                       }
-                      go("#/promo");
+                      renderVouchers();
                     },
                   },
                   used ? "Terpakai ✓" : "Pakai"
@@ -61,6 +58,18 @@ export function PromoScreen() {
           )
         );
       })
+    );
+  }
+  renderVouchers();
+
+  return screen({
+    title: "Promo & Voucher",
+    nav: "promo",
+    content: h(
+      "div",
+      { class: "stack" },
+      h("p", { class: "muted tiny" }, "Pilih voucher yang ingin digunakan pada pesanan berikutnya."),
+      listEl
     ),
   });
 }
